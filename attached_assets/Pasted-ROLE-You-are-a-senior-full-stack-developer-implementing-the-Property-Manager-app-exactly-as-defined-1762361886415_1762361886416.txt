@@ -1,0 +1,248 @@
+ROLE: You are a senior full-stack developer implementing the Property Manager app exactly as defined below. 
+You MUST NOT invent features, logic, or fields not in this SPEC. 
+If anything is unclear, output exactly:
+BLOCKED: <one concise clarification question>
+…and STOP.
+
+==============================================================================
+SPEC — PROPERTY MANAGER APP (v0.2)
+==============================================================================
+
+OVERVIEW:
+A responsive Property Management System for landlords/managers to track properties, units, tenants, rent, and expenses. 
+Platform: web first (desktop/tablet/mobile responsive), extendable later to mobile app and iOS HTML wrapper.
+
+==============================================================================
+TECH STACK
+==============================================================================
+Frontend:
+- React + Vite + TypeScript + TailwindCSS
+- React Router for navigation
+- React Hook Form + Zod for form validation
+- TanStack Query for server data
+- Zustand for local UI state (e.g., selected property)
+- Accessibility: WCAG AA standards
+
+Backend:
+- Node + Express + TypeScript
+- Prisma (PostgreSQL)
+- Zod for validation
+- pino for logging
+- helmet + cors + express-rate-limit for security
+
+Testing:
+- Vitest + RTL (web)
+- Jest + supertest (server)
+
+Deployment:
+- Docker + docker-compose for server + db
+- Environment variables in .env.example
+- Private hosting ready
+
+==============================================================================
+KEY ENHANCEMENTS (newly added)
+==============================================================================
+
+1️⃣ **Search & Filters**
+   - Add search bars and filters on Tenants, Units, and Transactions pages.
+   - Search by tenant name, phone, email, unit name, or transaction type.
+   - Filters: by property, status (Active/Inactive), date range, and income/expense.
+
+2️⃣ **Activity Log (Audit Trail)**
+   - Each Property and Unit has an “Activity Log” tab showing recent actions:
+     • Tenant added, edited, or moved
+     • Transaction added or edited
+     • Contract start/end updates
+   - Store logs in a new table `ActivityLog { id, entityType, entityId, action, message, createdAt }`
+   - Display last 10 actions per entity.
+
+3️⃣ **Occupancy Rate Metric**
+   - Add to Dashboard: `Occupancy Rate = (activeTenants / totalUnits) * 100`.
+   - Show as a KPI card next to Total Income / Total Expense / Net Balance.
+
+7️⃣ **Export to CSV**
+   - Add “Export to CSV” buttons for Tenants and Transactions lists.
+   - Backend route `/export/<entity>` returns CSV with current filters.
+   - Web triggers browser download.
+
+==============================================================================
+CORE ENTITIES & RULES
+==============================================================================
+
+PROPERTY
+- id (uuid), name (string), address (string), createdAt (date)
+- One Property has many Units.
+
+UNIT
+- id, name, propertyId, deposit, floor, rent, maintenance,
+  contractStart, contractEnd, createdAt, updatedAt
+- Relations: belongs to Property; has many Tenants.
+- One Tenant can belong to only one Unit.
+
+TENANT
+- id, status ('Active'|'Inactive'), name, unitId, phone, email, aadhar,
+  address, extraDetails, emergencyContact, dob, workDetails, gender,
+  idImageUrl (nullable), createdAt, updatedAt
+- Rules:
+  • A tenant cannot belong to more than one unit simultaneously.
+  • “Active” tenants currently occupy a unit.
+  • “Inactive” tenants are past occupants.
+
+TRANSACTION
+- id, name, transactionType, isIncome, amount, date, paidBy, receiptUrl (nullable), unitId, createdAt, updatedAt
+- Rules:
+  • If transactionType = 'Rent' or 'Deposit' → isIncome = true.
+  • All others default isIncome = false.
+  • One Transaction belongs to one Unit.
+  • Green theme for Income; Red theme for Expense.
+
+DASHBOARD METRICS
+- KPIs: Total Income, Total Expense, Net Balance, Occupancy Rate
+- Charts: Income vs Expense (monthly/yearly), Rent trend
+- Insights: Most expensive category, % change in expense and rent (month-to-month or year-to-year)
+
+CONTRACT RENEWALS
+- Notify when contractEnd within 30 days (configurable later)
+- Daily cron job creates Reminder entries.
+
+==============================================================================
+UI REQUIREMENTS
+==============================================================================
+
+NAVIGATION:
+- Top bar: property name as title/logo, “Add Transaction” button
+- Breadcrumb below top bar
+- Mobile: hamburger menu (Home, Properties, Units, Tenants, Transactions)
+
+ROUTES:
+1️⃣ **Home (Dashboard)**  
+   - Property selector if multiple properties exist  
+   - KPIs: Total Income, Total Expense, Net Balance, Occupancy Rate  
+   - Charts and Insights per rules above  
+
+2️⃣ **Properties & Units**
+   - /properties: list all; auto-open if only one property.
+   - /properties/:id: show property details + units.
+   - /units/:id: show unit info, Active + Inactive tenants, related transactions, Activity Log.
+   - Add/Edit/Delete Property/Unit.
+
+3️⃣ **Tenants**
+   - /tenants: Active / Inactive tabs.
+   - List tenants; search & filters (status, property, unit, name, phone).
+   - Tenant detail page with all fields + ID image.
+   - Add/Edit/Delete tenant.
+   - Link tenant to a Unit (single select).
+   - ID image upload: camera or file.
+
+4️⃣ **Transactions**
+   - /transactions: table with search + filters (property, unit, income/expense, date range).
+   - Columns: type, name, amount, date, unit, actions.
+   - Colored theme (green for income, red for expense).
+   - Add/Edit/Delete Transaction; auto-derive isIncome.
+   - Receipt image upload (local /uploads).
+   - “Export CSV” button.
+
+5️⃣ **Activity Log**
+   - Each Property/Unit has an Activity tab listing last 10 events.
+   - Show timestamp + description.
+
+==============================================================================
+BACKEND / API REQUIREMENTS
+==============================================================================
+
+API ROUTES (REST):
+- /add_property /edit_property /delete_property /get_property
+- /add_unit /edit_unit /delete_unit /get_unit
+- /add_tenant /edit_tenant /delete_tenant /get_tenant
+- /add_transaction /edit_transaction /delete_transaction /get_transaction
+- /calculate_income /calculate_expense
+- /reminders (GET)
+- /upload (POST multipart)
+- /activity_log (GET by entity)
+- /export/:entity (GET CSV export)
+
+VALIDATION & SECURITY:
+- Zod for all endpoints
+- Reject unknown keys
+- Error shape:
+  { "error": { "code": "string", "message": "string", "details": "optional" } }
+- Helmet + cors (allowlist env var)
+- Rate limiting on POST/PUT/DELETE
+- Pino logging
+
+DATABASE (Prisma):
+- Models: Property, Unit, Tenant, Transaction, Reminder, ActivityLog
+- Seed data: 1 property, 2 units, 2 tenants, 4 transactions.
+- Relations: as defined above.
+
+CONTRACT REMINDER JOB:
+- node-cron daily
+- Finds units with contractEnd within 30 days
+- Writes to Reminder table; GET /reminders lists pending renewals.
+
+UPLOAD HANDLING:
+- POST /upload → returns { url, filename, size, mime }
+- Store under /uploads, served statically via /static
+- Max 5MB, mime=image/* only
+
+EXPORT HANDLING:
+- /export/tenants and /export/transactions → CSV generated dynamically
+- Use current filters from query params
+
+==============================================================================
+DATA IMPORT (Google Sheets Integration - Future)
+==============================================================================
+- Each sheet/tab in the user’s Google Sheets represents a monthly data set of tenants and transactions.
+- Later integration plan:
+  • Provide CSV download from Google Sheets.
+  • App will support CSV import endpoints:
+    - POST /import/tenants
+    - POST /import/transactions
+  • Each import will map columns by header names and insert into DB after validation.
+  • Use same Zod validation for data integrity.
+- For now, include placeholder import service and stub endpoints with “TODO: implement import logic later.”
+
+==============================================================================
+DEV / TEST / DEPLOY
+==============================================================================
+- Commands:
+  pnpm install  
+  pnpm run dev:web  
+  pnpm run dev:server  
+  pnpm run dev:all (concurrently)  
+  pnpm -C apps/server prisma migrate dev  
+  pnpm -C apps/server prisma db seed  
+  docker-compose up (postgres + server)
+
+- Testing:
+  • server routes with Jest + supertest (1 happy + 1 failure)
+  • client forms with Vitest + RTL
+
+==============================================================================
+DELIVERABLE
+==============================================================================
+
+Generate a complete monorepo scaffold implementing everything in this SPEC.
+
+STRUCTURE:
+- /apps/web (React + Vite)
+- /apps/server (Express + Prisma)
+- /packages/ui (shared components)
+- /packages/types (shared Zod schemas)
+- /packages/config (eslint, prettier, tsconfig)
+- Docker + Postgres setup
+
+OUTPUT:
+1. File tree overview
+2. package.jsons, Tailwind config, tsconfig base
+3. Prisma schema + seed script
+4. Example route (CRUD) for one entity
+5. Example UI (Dashboard + Property List placeholder)
+6. Commands to run dev & migrations
+
+Do not add text beyond code and necessary explanations.
+If anything is unclear, respond:
+BLOCKED: <question>
+and stop.
+
+END OF SPEC
