@@ -82,18 +82,25 @@ export const insertUnitSchema = createInsertSchema(units).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  contractStart: z.union([z.coerce.date(), z.literal("")]).transform((v) => v === "" ? undefined : v).optional().nullable(),
+  contractEnd: z.union([z.coerce.date(), z.literal("")]).transform((v) => v === "" ? undefined : v).optional().nullable(),
 });
 
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dob: z.union([z.coerce.date(), z.literal("")]).transform((v) => v === "" ? undefined : v).optional(),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  date: z.union([z.coerce.date(), z.string()]).transform((v) => typeof v === 'string' && v !== "" ? new Date(v) : v),
 });
 
 export const insertReminderSchema = createInsertSchema(reminders).omit({

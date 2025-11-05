@@ -1,17 +1,25 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TenantCard from "@/components/TenantCard";
+import TenantDialog from "@/components/TenantDialog";
+import DeleteDialog from "@/components/DeleteDialog";
 import SearchBar from "@/components/SearchBar";
 import FilterPanel from "@/components/FilterPanel";
 import { Plus, Download } from "lucide-react";
 import type { Tenant, Unit } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Tenants() {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<any>({});
   const [activeTab, setActiveTab] = useState("active");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | undefined>();
 
   const { data: tenants = [], isLoading } = useQuery<Tenant[]>({ 
     queryKey: ["/api/tenants"] 
@@ -39,6 +47,34 @@ export default function Tenants() {
 
   const activeTenants = filteredTenants.filter(t => t.status === "Active");
   const inactiveTenants = filteredTenants.filter(t => t.status === "Inactive");
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/tenants/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tenants"] });
+      toast({ title: "Success", description: "Tenant deleted successfully" });
+      setDeleteDialogOpen(false);
+      setSelectedTenant(undefined);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete tenant", variant: "destructive" });
+    },
+  });
+
+  const handleEdit = (tenant: Tenant) => {
+    setSelectedTenant(tenant);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (tenant: Tenant) => {
+    setSelectedTenant(tenant);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedTenant(undefined);
+    setDialogOpen(true);
+  };
 
   const handleExport = () => {
     window.location.href = `/api/export/tenants?status=${activeTab !== "all" ? (activeTab === "active" ? "Active" : "Inactive") : ""}`;
@@ -71,7 +107,7 @@ export default function Tenants() {
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
-          <Button data-testid="button-add-tenant">
+          <Button onClick={handleAdd} data-testid="button-add-tenant">
             <Plus className="w-4 h-4 mr-2" />
             Add Tenant
           </Button>
@@ -107,7 +143,8 @@ export default function Tenants() {
                 key={tenant.id}
                 tenant={tenant}
                 unitName={getUnitName(tenant.unitId)}
-                onClick={() => console.log("Navigate to tenant:", tenant.id)}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
               />
             ))}
           </div>
@@ -125,7 +162,8 @@ export default function Tenants() {
                 key={tenant.id}
                 tenant={tenant}
                 unitName={getUnitName(tenant.unitId)}
-                onClick={() => console.log("Navigate to tenant:", tenant.id)}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
               />
             ))}
           </div>
@@ -136,6 +174,21 @@ export default function Tenants() {
           )}
         </TabsContent>
       </Tabs>
+
+      <TenantDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+        tenant={selectedTenant}
+      />
+
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={() => selectedTenant && deleteMutation.mutate(selectedTenant.id)}
+        title="Delete Tenant"
+        description={`Are you sure you want to delete "${selectedTenant?.name}"? This action cannot be undone.`}
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   );
 }

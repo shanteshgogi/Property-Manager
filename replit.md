@@ -8,6 +8,8 @@ A responsive Property Management System designed for landlords and property mana
 
 **Target Platform**: Web-first (desktop/tablet/mobile responsive), with future extensibility to mobile apps and iOS HTML wrappers.
 
+**Current Status (November 2025)**: Full-stack application with complete CRUD operations for all entities, file upload functionality, search/filter capabilities, CSV export, and automated contract reminders.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -23,9 +25,9 @@ Preferred communication style: Simple, everyday language.
 - **Design System**: Based on Linear's clean data presentation approach, prioritizing scanability and information density over visual flourish
 
 **State Management**:
-- **TanStack Query**: Server state management and data fetching with automatic caching and refetching
-- **Zustand**: Planned for local UI state (e.g., selected property context)
-- **React Hook Form + Zod**: Form validation and data schema enforcement
+- **TanStack Query**: Server state management and data fetching with automatic caching, refetching, and optimistic updates
+- **React Hook Form + Zod**: Form validation and data schema enforcement with zodResolver integration
+- **Dialog State**: Local useState for managing CRUD dialog visibility and selected entity context
 
 **Styling Approach**:
 - **Typography**: Inter font family for UI, JetBrains Mono for financial/numerical data
@@ -125,6 +127,30 @@ Preferred communication style: Simple, everyday language.
 - Escaping of special characters (commas, quotes, newlines)
 - Tenant export with status filtering
 - Transaction export with date range filtering
+
+### CRUD Operations
+
+**Implementation Pattern**: Dialog-based forms with optimistic UI updates
+
+**Components**:
+- **PropertyDialog**: Create/Edit properties (name, address)
+- **UnitDialog**: Create/Edit units (name, floor, rent, deposit, maintenance, contract dates)
+- **TenantDialog**: Create/Edit tenants with file upload for ID documents
+- **TransactionDialog**: Create/Edit transactions with receipt uploads
+- **DeleteDialog**: Reusable confirmation dialog for all delete operations
+
+**Features**:
+- Form validation using React Hook Form with Zod schemas
+- File upload support for tenant IDs and transaction receipts (5MB max, images only)
+- Automatic cache invalidation via TanStack Query after mutations
+- Toast notifications for success/error feedback
+- Dropdown menus on cards for edit/delete actions
+- Loading states during mutations
+
+**User Flow**:
+1. Add: Click "Add [Entity]" button → Open dialog → Fill form → Submit → Auto-refresh data
+2. Edit: Click menu icon on card → Select "Edit" → Pre-filled dialog → Update → Submit
+3. Delete: Click menu icon → Select "Delete" → Confirmation dialog → Confirm deletion
 
 ## External Dependencies
 

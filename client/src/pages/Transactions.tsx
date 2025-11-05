@@ -1,18 +1,26 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TransactionRow from "@/components/TransactionRow";
+import TransactionDialog from "@/components/TransactionDialog";
+import DeleteDialog from "@/components/DeleteDialog";
 import SearchBar from "@/components/SearchBar";
 import FilterPanel from "@/components/FilterPanel";
 import { Plus, Download } from "lucide-react";
 import type { Transaction, Unit } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Transactions() {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<any>({});
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | undefined>();
 
   const { data: transactions = [], isLoading } = useQuery<Transaction[]>({ 
     queryKey: ["/api/transactions"] 
@@ -50,6 +58,35 @@ export default function Transactions() {
     .filter(t => !t.isIncome)
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/transactions/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({ title: "Success", description: "Transaction deleted successfully" });
+      setDeleteDialogOpen(false);
+      setSelectedTransaction(undefined);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete transaction", variant: "destructive" });
+    },
+  });
+
+  const handleEdit = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedTransaction(undefined);
+    setDialogOpen(true);
+  };
+
   const handleExport = () => {
     const params = new URLSearchParams();
     if (typeFilter === "income") params.append("isIncome", "true");
@@ -85,7 +122,7 @@ export default function Transactions() {
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
-          <Button data-testid="button-add-transaction">
+          <Button onClick={handleAdd} data-testid="button-add-transaction">
             <Plus className="w-4 h-4 mr-2" />
             Add Transaction
           </Button>
@@ -146,8 +183,8 @@ export default function Transactions() {
             key={transaction.id}
             transaction={transaction}
             unitName={getUnitName(transaction.unitId)}
-            onEdit={() => console.log("Edit transaction:", transaction.id)}
-            onDelete={() => console.log("Delete transaction:", transaction.id)}
+            onEdit={() => handleEdit(transaction)}
+            onDelete={() => handleDelete(transaction)}
           />
         ))}
         {filteredTransactions.length === 0 && (
@@ -156,6 +193,21 @@ export default function Transactions() {
           </div>
         )}
       </Card>
+
+      <TransactionDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+        transaction={selectedTransaction}
+      />
+
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={() => selectedTransaction && deleteMutation.mutate(selectedTransaction.id)}
+        title="Delete Transaction"
+        description={`Are you sure you want to delete this transaction "${selectedTransaction?.name}"? This action cannot be undone.`}
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   );
 }
