@@ -1,15 +1,34 @@
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "@/components/PropertyCard";
 import { Plus } from "lucide-react";
-import { mockProperties, mockUnits } from "@/lib/mockData";
+import type { Property, Unit } from "@shared/schema";
 
 export default function Properties() {
-  const [properties] = useState(mockProperties);
+  const { data: properties = [], isLoading } = useQuery<Property[]>({ 
+    queryKey: ["/api/properties"] 
+  });
+
+  const { data: units = [] } = useQuery<Unit[]>({ 
+    queryKey: ["/api/units"] 
+  });
 
   const getUnitCount = (propertyId: string) => {
-    return mockUnits.filter(u => u.propertyId === propertyId).length;
+    return units.filter(u => u.propertyId === propertyId).length;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold" data-testid="text-page-title">Properties</h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading properties...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

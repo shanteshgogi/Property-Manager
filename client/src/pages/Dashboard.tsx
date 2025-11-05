@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,45 +7,109 @@ import KPICard from "@/components/KPICard";
 import IncomeExpenseChart from "@/components/IncomeExpenseChart";
 import PropertySelector from "@/components/PropertySelector";
 import { DollarSign, TrendingUp, TrendingDown, Users, Plus } from "lucide-react";
-import { mockProperties, mockUnits, mockTenants, mockTransactions } from "@/lib/mockData";
+import type { Property, Transaction } from "@shared/schema";
 
 export default function Dashboard() {
-  const [selectedProperty, setSelectedProperty] = useState(mockProperties[0]?.id);
   const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
 
-  // TODO: remove mock functionality - calculate from real data
-  const totalIncome = 54000;
-  const totalExpense = 6500;
-  const netBalance = totalIncome - totalExpense;
-  
-  const propertyUnits = mockUnits.filter(u => u.propertyId === selectedProperty);
-  const activeTenants = mockTenants.filter(t => t.status === "Active" && propertyUnits.some(u => u.id === t.unitId));
-  const occupancyRate = Math.round((activeTenants.length / propertyUnits.length) * 100);
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({ 
+    queryKey: ["/api/properties"] 
+  });
 
-  const chartData = [
-    { month: "Jan", income: 24000, expense: 6500 },
-    { month: "Feb", income: 27000, expense: 5800 },
-    { month: "Mar", income: 30000, expense: 7200 },
-    { month: "Apr", income: 24000, expense: 4500 },
-    { month: "May", income: 27000, expense: 6100 },
-    { month: "Jun", income: 30000, expense: 5900 },
-  ];
+  const [selectedProperty, setSelectedProperty] = useState<string | undefined>(undefined);
 
-  const selectedPropertyData = mockProperties.find(p => p.id === selectedProperty);
+  const effectiveProperty = selectedProperty || properties[0]?.id;
+
+  const { data: stats, isLoading: statsLoading } = useQuery<{
+    totalIncome: number;
+    totalExpense: number;
+    netBalance: number;
+    occupancyRate: number;
+    totalUnits: number;
+    occupiedUnits: number;
+  }>({
+    queryKey: ["/api/dashboard/stats", effectiveProperty],
+    enabled: !!effectiveProperty,
+  });
+
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery<Transaction[]>({ 
+    queryKey: ["/api/transactions"],
+    enabled: !!effectiveProperty,
+  });
+
+  const { data: reminders = [] } = useQuery<any[]>({ 
+    queryKey: ["/api/reminders"] 
+  });
+
+  const isLoading = propertiesLoading || statsLoading || transactionsLoading;
+
+  const totalIncome = stats?.totalIncome || 0;
+  const totalExpense = stats?.totalExpense || 0;
+  const netBalance = stats?.netBalance || 0;
+  const occupancyRate = stats?.occupancyRate || 0;
+
+  const getMonthlyData = () => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentYear = new Date().getFullYear();
+    const last6Months = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      last6Months.push({
+        month: monthNames[date.getMonth()],
+        year: date.getFullYear(),
+      });
+    }
+
+    return last6Months.map(({ month, year }) => {
+      const monthIndex = monthNames.indexOf(month);
+      const monthTransactions = transactions.filter(t => {
+        const txDate = new Date(t.date);
+        return txDate.getMonth() === monthIndex && txDate.getFullYear() === year;
+      });
+
+      const income = monthTransactions
+        .filter(t => t.isIncome)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      const expense = monthTransactions
+        .filter(t => !t.isIncome)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      return { month, income, expense };
+    });
+  };
+
+  const chartData = getMonthlyData();
+  const selectedPropertyData = properties.find(p => p.id === effectiveProperty);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold" data-testid="text-page-title">Dashboard</h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold mb-2" data-testid="text-page-title">Dashboard</h1>
-          {mockProperties.length > 1 && (
+          {properties.length > 1 && (
             <PropertySelector
-              properties={mockProperties}
-              selectedId={selectedProperty}
+              properties={properties}
+              selectedId={effectiveProperty}
               onSelect={setSelectedProperty}
             />
           )}
-          {mockProperties.length === 1 && selectedPropertyData && (
+          {properties.length === 1 && selectedPropertyData && (
             <p className="text-lg text-muted-foreground">{selectedPropertyData.name}</p>
           )}
         </div>
@@ -87,7 +152,7 @@ export default function Dashboard() {
           title="Occupancy Rate"
           value={`${occupancyRate}%`}
           icon={Users}
-          trend={{ value: `${activeTenants.length} of ${propertyUnits.length} units`, isPositive: true }}
+          trend={{ value: `${stats?.occupiedUnits || 0} of ${stats?.totalUnits || 0} units`, isPositive: true }}
         />
       </div>
 
@@ -115,7 +180,7 @@ export default function Dashboard() {
               <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
               <div>
                 <p className="text-sm font-medium">Contract Renewals</p>
-                <p className="text-sm text-muted-foreground">1 unit contract expiring in 30 days</p>
+                <p className="text-sm text-muted-foreground">{reminders.length} pending renewal reminders</p>
               </div>
             </div>
           </div>
@@ -126,19 +191,23 @@ export default function Dashboard() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total Properties</span>
-              <span className="font-medium">{mockProperties.length}</span>
+              <span className="font-medium">{properties.length}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total Units</span>
-              <span className="font-medium">{propertyUnits.length}</span>
+              <span className="font-medium">{stats?.totalUnits || 0}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Active Tenants</span>
-              <span className="font-medium">{activeTenants.length}</span>
+              <span className="font-medium">{stats?.occupiedUnits || 0}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Transactions This Month</span>
-              <span className="font-medium">{mockTransactions.length}</span>
+              <span className="font-medium">{transactions.length}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Pending Reminders</span>
+              <span className="font-medium">{reminders.length}</span>
             </div>
           </div>
         </Card>

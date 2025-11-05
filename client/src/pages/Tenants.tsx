@@ -1,23 +1,32 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TenantCard from "@/components/TenantCard";
 import SearchBar from "@/components/SearchBar";
 import FilterPanel from "@/components/FilterPanel";
 import { Plus, Download } from "lucide-react";
-import { mockTenants, mockUnits } from "@/lib/mockData";
+import type { Tenant, Unit } from "@shared/schema";
 
 export default function Tenants() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<any>({});
   const [activeTab, setActiveTab] = useState("active");
 
+  const { data: tenants = [], isLoading } = useQuery<Tenant[]>({ 
+    queryKey: ["/api/tenants"] 
+  });
+
+  const { data: units = [] } = useQuery<Unit[]>({ 
+    queryKey: ["/api/units"] 
+  });
+
   const getUnitName = (unitId: string | null) => {
     if (!unitId) return undefined;
-    return mockUnits.find(u => u.id === unitId)?.name;
+    return units.find(u => u.id === unitId)?.name;
   };
 
-  const filteredTenants = mockTenants.filter(tenant => {
+  const filteredTenants = tenants.filter(tenant => {
     const matchesSearch = tenant.name.toLowerCase().includes(search.toLowerCase()) ||
       tenant.phone.includes(search) ||
       tenant.email?.toLowerCase().includes(search.toLowerCase());
@@ -31,6 +40,23 @@ export default function Tenants() {
   const activeTenants = filteredTenants.filter(t => t.status === "Active");
   const inactiveTenants = filteredTenants.filter(t => t.status === "Inactive");
 
+  const handleExport = () => {
+    window.location.href = `/api/export/tenants?status=${activeTab !== "all" ? (activeTab === "active" ? "Active" : "Inactive") : ""}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold" data-testid="text-page-title">Tenants</h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading tenants...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -41,7 +67,7 @@ export default function Tenants() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" data-testid="button-export-csv">
+          <Button variant="outline" onClick={handleExport} data-testid="button-export-csv">
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
@@ -63,7 +89,7 @@ export default function Tenants() {
         <FilterPanel
           filters={filters}
           onFilterChange={setFilters}
-          units={mockUnits.map(u => ({ id: u.id, name: u.name }))}
+          units={units.map(u => ({ id: u.id, name: u.name }))}
           showUnit={true}
         />
       </div>

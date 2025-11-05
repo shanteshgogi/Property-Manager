@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,18 +7,26 @@ import TransactionRow from "@/components/TransactionRow";
 import SearchBar from "@/components/SearchBar";
 import FilterPanel from "@/components/FilterPanel";
 import { Plus, Download } from "lucide-react";
-import { mockTransactions, mockUnits } from "@/lib/mockData";
+import type { Transaction, Unit } from "@shared/schema";
 
 export default function Transactions() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<any>({});
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
 
+  const { data: transactions = [], isLoading } = useQuery<Transaction[]>({ 
+    queryKey: ["/api/transactions"] 
+  });
+
+  const { data: units = [] } = useQuery<Unit[]>({ 
+    queryKey: ["/api/units"] 
+  });
+
   const getUnitName = (unitId: string) => {
-    return mockUnits.find(u => u.id === unitId)?.name || "Unknown";
+    return units.find(u => u.id === unitId)?.name || "Unknown";
   };
 
-  const filteredTransactions = mockTransactions.filter(transaction => {
+  const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.name.toLowerCase().includes(search.toLowerCase()) ||
       transaction.transactionType.toLowerCase().includes(search.toLowerCase());
     
@@ -41,6 +50,29 @@ export default function Transactions() {
     .filter(t => !t.isIncome)
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
+  const handleExport = () => {
+    const params = new URLSearchParams();
+    if (typeFilter === "income") params.append("isIncome", "true");
+    if (typeFilter === "expense") params.append("isIncome", "false");
+    if (filters.unitId) params.append("unitId", filters.unitId);
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
+    window.location.href = `/api/export/transactions?${params.toString()}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold" data-testid="text-page-title">Transactions</h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading transactions...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -49,7 +81,7 @@ export default function Transactions() {
           <p className="text-muted-foreground">{filteredTransactions.length} transactions</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" data-testid="button-export-csv">
+          <Button variant="outline" onClick={handleExport} data-testid="button-export-csv">
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
@@ -102,7 +134,7 @@ export default function Transactions() {
         <FilterPanel
           filters={filters}
           onFilterChange={setFilters}
-          units={mockUnits.map(u => ({ id: u.id, name: u.name }))}
+          units={units.map(u => ({ id: u.id, name: u.name }))}
           showUnit={true}
           showDateRange={true}
         />
