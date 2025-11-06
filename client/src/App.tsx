@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Link } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,15 +6,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import MobileMenu from "@/components/MobileMenu";
 import Breadcrumb from "@/components/Breadcrumb";
-import { Plus, Building2, Moon, Sun } from "lucide-react";
+import { Building2, Moon, Sun, LayoutDashboard, Home, Users, Receipt } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import type { Property } from "@shared/schema";
 import Dashboard from "@/pages/Dashboard";
 import Properties from "@/pages/Properties";
 import Tenants from "@/pages/Tenants";
 import Transactions from "@/pages/Transactions";
 import NotFound from "@/pages/not-found";
-import { mockProperties } from "@/lib/mockData";
 
 function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -69,7 +70,15 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const selectedProperty = mockProperties[0];
+  const { data: properties = [] } = useQuery<Property[]>({ queryKey: ["/api/properties"] });
+  const selectedProperty = properties.length === 1 ? properties[0] : null;
+
+  const navItems = [
+    { label: "Dashboard", href: "/", icon: LayoutDashboard },
+    { label: "Properties", href: "/properties", icon: Home },
+    { label: "Tenants", href: "/tenants", icon: Users },
+    { label: "Transactions", href: "/transactions", icon: Receipt },
+  ];
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -86,13 +95,28 @@ function App() {
                       {selectedProperty?.name || "Property Manager"}
                     </h1>
                   </div>
+                  <nav className="hidden md:flex items-center gap-1 ml-8">
+                    {navItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location === item.href;
+                      return (
+                        <Link key={item.href} href={item.href}>
+                          <Button
+                            variant={isActive ? "secondary" : "ghost"}
+                            size="sm"
+                            className="gap-2"
+                            data-testid={`nav-${item.label.toLowerCase()}`}
+                          >
+                            <Icon className="w-4 h-4" />
+                            {item.label}
+                          </Button>
+                        </Link>
+                      );
+                    })}
+                  </nav>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <Button className="hidden md:flex" data-testid="button-add-transaction-header">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Transaction
-                  </Button>
                   <ThemeToggle />
                 </div>
               </div>

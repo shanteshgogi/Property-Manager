@@ -6,11 +6,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import KPICard from "@/components/KPICard";
 import IncomeExpenseChart from "@/components/IncomeExpenseChart";
 import PropertySelector from "@/components/PropertySelector";
+import TransactionDialog from "@/components/TransactionDialog";
 import { DollarSign, TrendingUp, TrendingDown, Users, Plus } from "lucide-react";
 import type { Property, Transaction } from "@shared/schema";
 
 export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
+  const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
 
   const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({ 
     queryKey: ["/api/properties"] 
@@ -101,16 +103,15 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold mb-2" data-testid="text-page-title">Dashboard</h1>
+          <h1 className="text-3xl font-semibold mb-2" data-testid="text-page-title">
+            {selectedPropertyData?.name || "Dashboard"}
+          </h1>
           {properties.length > 1 && (
             <PropertySelector
               properties={properties}
               selectedId={effectiveProperty}
               onSelect={setSelectedProperty}
             />
-          )}
-          {properties.length === 1 && selectedPropertyData && (
-            <p className="text-lg text-muted-foreground">{selectedPropertyData.name}</p>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -120,7 +121,7 @@ export default function Dashboard() {
               <TabsTrigger value="yearly" data-testid="tab-yearly">Yearly</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button data-testid="button-add-transaction">
+          <Button onClick={() => setTransactionDialogOpen(true)} data-testid="button-add-transaction">
             <Plus className="w-4 h-4 mr-2" />
             Add Transaction
           </Button>
@@ -212,6 +213,11 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      <TransactionDialog
+        open={transactionDialogOpen}
+        onOpenChange={setTransactionDialogOpen}
+      />
     </div>
   );
 }
