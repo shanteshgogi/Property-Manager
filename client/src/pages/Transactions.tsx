@@ -129,22 +129,22 @@ export default function Transactions() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6">
-          <p className="text-sm text-muted-foreground mb-2">Total Income</p>
-          <p className="text-2xl font-bold font-mono text-green-600 dark:text-green-400">
+      <div className="flex gap-4">
+        <Card className="flex-1 p-4">
+          <p className="text-xs text-muted-foreground mb-1">Total Income</p>
+          <p className="text-xl font-bold font-mono text-green-600 dark:text-green-400">
             ₹{totalIncome.toLocaleString()}
           </p>
         </Card>
-        <Card className="p-6">
-          <p className="text-sm text-muted-foreground mb-2">Total Expense</p>
-          <p className="text-2xl font-bold font-mono text-red-600 dark:text-red-400">
+        <Card className="flex-1 p-4">
+          <p className="text-xs text-muted-foreground mb-1">Total Expense</p>
+          <p className="text-xl font-bold font-mono text-red-600 dark:text-red-400">
             ₹{totalExpense.toLocaleString()}
           </p>
         </Card>
-        <Card className="p-6">
-          <p className="text-sm text-muted-foreground mb-2">Net</p>
-          <p className="text-2xl font-bold font-mono">
+        <Card className="flex-1 p-4">
+          <p className="text-xs text-muted-foreground mb-1">Net</p>
+          <p className="text-xl font-bold font-mono">
             ₹{(totalIncome - totalExpense).toLocaleString()}
           </p>
         </Card>

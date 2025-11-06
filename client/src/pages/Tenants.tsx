@@ -35,9 +35,11 @@ export default function Tenants() {
   };
 
   const filteredTenants = tenants.filter(tenant => {
+    const unitName = getUnitName(tenant.unitId);
     const matchesSearch = tenant.name.toLowerCase().includes(search.toLowerCase()) ||
       tenant.phone.includes(search) ||
-      tenant.email?.toLowerCase().includes(search.toLowerCase());
+      tenant.email?.toLowerCase().includes(search.toLowerCase()) ||
+      (unitName && unitName.toLowerCase().includes(search.toLowerCase()));
     
     const matchesStatus = activeTab === "all" || tenant.status === (activeTab === "active" ? "Active" : "Inactive");
     const matchesUnit = !filters.unitId || tenant.unitId === filters.unitId;
@@ -117,7 +119,7 @@ export default function Tenants() {
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <SearchBar
-            placeholder="Search by name, phone, or email..."
+            placeholder="Search by name, phone, email, or unit..."
             value={search}
             onChange={setSearch}
           />

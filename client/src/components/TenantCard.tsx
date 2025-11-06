@@ -64,7 +64,15 @@ export default function TenantCard({ tenant, unitName, onEdit, onDelete }: Tenan
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{tenant.phone}</span>
+              <a 
+                href={`https://wa.me/${tenant.phone.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="truncate hover:text-primary hover:underline transition-colors"
+                data-testid={`link-whatsapp-${tenant.id}`}
+              >
+                {tenant.phone}
+              </a>
             </div>
             {tenant.email && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
