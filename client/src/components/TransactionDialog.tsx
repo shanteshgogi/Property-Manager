@@ -31,7 +31,7 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
       name: "",
       transactionType: "Rent",
       isIncome: true,
-      amount: "",
+      amount: "0",
       date: new Date().toISOString().split('T')[0],
       paidBy: "",
       unitId: "",
@@ -114,7 +114,7 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
           name: "",
           transactionType: "Rent",
           isIncome: true,
-          amount: "",
+          amount: "0",
           date: new Date().toISOString().split('T')[0],
           paidBy: "",
           unitId: "",
@@ -223,7 +223,14 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
                   <FormItem>
                     <FormLabel>Amount (₹) *</FormLabel>
                     <FormControl>
-                      <Input placeholder="15000" {...field} data-testid="input-transaction-amount" />
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        min="0"
+                        placeholder="15000" 
+                        {...field} 
+                        data-testid="input-transaction-amount" 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
