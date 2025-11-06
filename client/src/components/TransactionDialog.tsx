@@ -169,6 +169,8 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
                       field.onChange(value);
                       if (value === "Rent" || value === "Deposit") {
                         form.setValue("isIncome", true);
+                      } else {
+                        form.setValue("isIncome", false);
                       }
                     }} value={field.value}>
                       <FormControl>
@@ -195,21 +197,11 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category *</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(value === "true")} 
-                      value={field.value ? "true" : "false"}
-                      disabled={transactionType === "Rent" || transactionType === "Deposit"}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-income-expense">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="true">Income</SelectItem>
-                        <SelectItem value="false">Expense</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center h-9 px-3 py-2 border rounded-md bg-muted">
+                      <span className="text-sm font-medium" data-testid="text-category">
+                        {field.value ? "Income" : "Expense"}
+                      </span>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
