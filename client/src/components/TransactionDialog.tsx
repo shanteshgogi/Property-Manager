@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { insertTransactionSchema, type InsertTransaction, type Transaction, type Unit } from "@shared/schema";
-import { Upload } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 
 interface TransactionDialogProps {
   open: boolean;
@@ -283,7 +283,7 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
             </div>
             <div className="space-y-2">
               <FormLabel>Receipt</FormLabel>
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -302,9 +302,22 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
                   onChange={handleFileUpload}
                 />
                 {form.watch("receiptUrl") && (
-                  <span className="text-sm text-muted-foreground">File uploaded</span>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm text-green-600 dark:text-green-400 font-medium">Uploaded</span>
+                  </div>
                 )}
               </div>
+              {form.watch("receiptUrl") && (
+                <div className="mt-3">
+                  <img 
+                    src={form.watch("receiptUrl")} 
+                    alt="Receipt Preview" 
+                    className="w-32 h-32 object-cover rounded-md border"
+                    data-testid="img-receipt-preview"
+                  />
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel">
