@@ -101,16 +101,9 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   updatedAt: true,
 }).extend({
   date: z.union([z.coerce.date(), z.string()]).transform((v) => typeof v === 'string' && v !== "" ? new Date(v) : v),
-  amount: z.union([z.string(), z.number()]).transform((v) => {
-    if (typeof v === 'string') {
-      const parsed = parseFloat(v);
-      if (isNaN(parsed)) return 0;
-      return parsed.toString();
-    }
-    return v.toString();
-  }).refine((v) => !isNaN(parseFloat(v)) && parseFloat(v) >= 0, {
+  amount: z.coerce.number().nonnegative({
     message: "Amount must be a valid positive number"
-  }),
+  }).transform((v) => v.toString()),
 });
 
 export const insertReminderSchema = createInsertSchema(reminders).omit({
