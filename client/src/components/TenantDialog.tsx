@@ -312,9 +312,9 @@ export default function TenantDialog({ open, onOpenChange, tenant }: TenantDialo
               </div>
               {form.watch("idImageUrl") && (
                 <div className="mt-3">
-                  <img 
-                    src={form.watch("idImageUrl")} 
-                    alt="ID Proof Preview" 
+                  <img
+                    src={form.watch("idImageUrl") || undefined}
+                    alt="ID Proof Preview"
                     className="w-32 h-32 object-cover rounded-md border"
                     data-testid="img-id-preview"
                   />
@@ -325,8 +325,8 @@ export default function TenantDialog({ open, onOpenChange, tenant }: TenantDialo
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel">
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >

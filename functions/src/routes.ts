@@ -1,20 +1,19 @@
 import type { Express } from "express";
 import express from "express";
-import { createServer, type Server } from "http";
-import { db } from "./firebase";
+import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
+import { db } from "./firebase.js";
+import { logActivity } from "./lib/activityLogger.js";
 import {
   insertPropertySchema,
   insertUnitSchema,
   insertTenantSchema,
   insertTransactionSchema,
-} from "../shared/schema";
-import { upload } from "./lib/fileUpload";
-import { logActivity } from "./lib/activityLogger";
-import { generateCSV } from "./lib/csvExport";
-import { z } from "zod";
+} from "./shared/schema.js";
+import { upload } from "./lib/fileUpload.js";
+import { generateCSV } from "./lib/csvExport.js";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export function registerRoutes(app: Express): void {
   // Serve uploaded files statically
   app.use("/uploads", (req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -700,6 +699,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
 }

@@ -21,12 +21,12 @@ export default function Tenants() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | undefined>();
 
-  const { data: tenants = [], isLoading } = useQuery<Tenant[]>({ 
-    queryKey: ["/api/tenants"] 
+  const { data: tenants = [], isLoading } = useQuery<Tenant[]>({
+    queryKey: ["/api/tenants"]
   });
 
-  const { data: units = [] } = useQuery<Unit[]>({ 
-    queryKey: ["/api/units"] 
+  const { data: units = [] } = useQuery<Unit[]>({
+    queryKey: ["/api/units"]
   });
 
   const getUnitName = (unitId: string | null) => {
@@ -35,12 +35,12 @@ export default function Tenants() {
   };
 
   const filteredTenants = tenants.filter(tenant => {
-    const unitName = getUnitName(tenant.unitId);
+    const unitName = getUnitName(tenant.unitId || null);
     const matchesSearch = tenant.name.toLowerCase().includes(search.toLowerCase()) ||
       tenant.phone.includes(search) ||
       tenant.email?.toLowerCase().includes(search.toLowerCase()) ||
       (unitName && unitName.toLowerCase().includes(search.toLowerCase()));
-    
+
     const matchesStatus = activeTab === "all" || tenant.status === (activeTab === "active" ? "Active" : "Inactive");
     const matchesUnit = !filters.unitId || tenant.unitId === filters.unitId;
 
@@ -144,7 +144,7 @@ export default function Tenants() {
               <TenantCard
                 key={tenant.id}
                 tenant={tenant}
-                unitName={getUnitName(tenant.unitId)}
+                unitName={getUnitName(tenant.unitId || null)}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
@@ -163,7 +163,7 @@ export default function Tenants() {
               <TenantCard
                 key={tenant.id}
                 tenant={tenant}
-                unitName={getUnitName(tenant.unitId)}
+                unitName={getUnitName(tenant.unitId || null)}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
@@ -177,9 +177,9 @@ export default function Tenants() {
         </TabsContent>
       </Tabs>
 
-      <TenantDialog 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen} 
+      <TenantDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         tenant={selectedTenant}
       />
 

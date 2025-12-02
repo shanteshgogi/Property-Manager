@@ -9,8 +9,8 @@ export default function UnitCardExample() {
     floor: 1,
     rent: 12000,
     maintenance: 2000,
-    contractStart: new Date("2024-01-01"),
-    contractEnd: new Date("2024-12-31"),
+    contractStart: "2024-01-01",
+    contractEnd: "2024-12-31",
     createdAt: new Date("2024-01-15"),
     updatedAt: new Date("2024-01-15"),
   };

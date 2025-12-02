@@ -1,5 +1,5 @@
-import { db } from "../db";
-import { activityLogs, type InsertActivityLog } from "../../shared/schema";
+import { db } from "../firebase";
+import { FieldValue } from "firebase-admin/firestore";
 
 export async function logActivity(
   entityType: string,
@@ -8,11 +8,12 @@ export async function logActivity(
   message: string
 ) {
   try {
-    await db.insert(activityLogs).values({
+    await db.collection("activity_logs").add({
       entityType,
       entityId,
       action,
       message,
+      createdAt: FieldValue.serverTimestamp(),
     });
   } catch (error) {
     console.error("Failed to log activity:", error);

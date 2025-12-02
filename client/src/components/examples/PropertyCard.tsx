@@ -13,7 +13,7 @@ export default function PropertyCardExample() {
       <PropertyCard
         property={mockProperty}
         unitCount={3}
-        onClick={() => console.log("Property clicked")}
+
       />
     </div>
   );

@@ -12,7 +12,7 @@ export default function TenantCardExample() {
     address: "Chennai, Tamil Nadu",
     extraDetails: "Family of 4",
     emergencyContact: "+91 9876543211",
-    dob: new Date("1985-05-15"),
+    dob: "1985-05-15",
     workDetails: "Software Engineer at Tech Corp",
     gender: "Male",
     idImageUrl: null,
@@ -25,7 +25,6 @@ export default function TenantCardExample() {
       <TenantCard
         tenant={mockTenant}
         unitName="A-101"
-        onClick={() => console.log("Tenant clicked")}
       />
     </div>
   );

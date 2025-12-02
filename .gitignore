@@ -1,6 +1,41 @@
-node_modules
-dist
+# Firebase & Build artifacts
+.firebase/
+dist/
+functions/lib/
+*.log
+firebase-debug*.log
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Firebase credentials (IMPORTANT: Keep this private!)
+*firebase-adminsdk*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+Thumbs.db
+
+# Uploads (user-generated content)
+uploads/
+
+# Local development
+.local/
+
+# Database
+db/
+*.db
+*.sqlite
+
+# Drizzle (legacy)
+drizzle/

@@ -215,13 +215,13 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
                   <FormItem>
                     <FormLabel>Amount (₹) *</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
+                      <Input
+                        type="number"
                         step="0.01"
                         min="0"
-                        placeholder="15000" 
-                        {...field} 
-                        data-testid="input-transaction-amount" 
+                        placeholder="15000"
+                        {...field}
+                        data-testid="input-transaction-amount"
                       />
                     </FormControl>
                     <FormMessage />
@@ -310,9 +310,9 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
               </div>
               {form.watch("receiptUrl") && (
                 <div className="mt-3">
-                  <img 
-                    src={form.watch("receiptUrl")} 
-                    alt="Receipt Preview" 
+                  <img
+                    src={form.watch("receiptUrl") || undefined}
+                    alt="Receipt Preview"
                     className="w-32 h-32 object-cover rounded-md border"
                     data-testid="img-receipt-preview"
                   />
@@ -323,8 +323,8 @@ export default function TransactionDialog({ open, onOpenChange, transaction }: T
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel">
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
