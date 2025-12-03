@@ -4,6 +4,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./firebase.js";
 import { logActivity } from "./activityLogger.js";
+import { requireAuth } from "./middleware/auth.js";
 import {
   insertPropertySchema,
   insertUnitSchema,
@@ -14,6 +15,13 @@ import { upload } from "./fileUpload.js";
 import { generateCSV } from "./csvExport.js";
 
 export function registerRoutes(app: Express): void {
+  // Apply auth middleware to all routes except uploads
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/uploads')) {
+      return next();
+    }
+    requireAuth(req, res, next);
+  });
   // Serve uploaded files statically
   app.use("/uploads", (req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");

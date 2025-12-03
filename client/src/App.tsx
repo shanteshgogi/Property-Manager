@@ -4,17 +4,30 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MobileMenu from "@/components/MobileMenu";
 import Breadcrumb from "@/components/Breadcrumb";
-import { Building2, Moon, Sun, LayoutDashboard, Home, Users, Receipt } from "lucide-react";
+import { Building2, Moon, Sun, LayoutDashboard, Home, Users, Receipt, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Property } from "@shared/schema";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { signOut } from "@/lib/auth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
 import Properties from "@/pages/Properties";
 import Tenants from "@/pages/Tenants";
 import Transactions from "@/pages/Transactions";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 function ThemeToggle() {
@@ -42,9 +55,59 @@ function ThemeToggle() {
   );
 }
 
+function UserProfile() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setLocation("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  if (!user) return null;
+
+  const displayName = user.displayName || user.email || "User";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={user.photoURL || undefined} alt={displayName} />
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleSignOut}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sign out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function getBreadcrumbItems(pathname: string): Array<{ label: string; href?: string }> {
   const items: Array<{ label: string; href?: string }> = [{ label: "Home", href: "/" }];
-  
+
   if (pathname.startsWith("/properties")) {
     items.push({ label: "Properties" });
   } else if (pathname.startsWith("/tenants")) {
@@ -52,17 +115,34 @@ function getBreadcrumbItems(pathname: string): Array<{ label: string; href?: str
   } else if (pathname.startsWith("/transactions")) {
     items.push({ label: "Transactions" });
   }
-  
+
   return items;
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/properties" component={Properties} />
-      <Route path="/tenants" component={Tenants} />
-      <Route path="/transactions" component={Transactions} />
+      <Route path="/login" component={Login} />
+      <Route path="/">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/properties">
+        <ProtectedRoute>
+          <Properties />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tenants">
+        <ProtectedRoute>
+          <Tenants />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/transactions">
+        <ProtectedRoute>
+          <Transactions />
+        </ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
@@ -116,6 +196,7 @@ function AppContent() {
 
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              <UserProfile />
             </div>
           </div>
 
@@ -135,10 +216,12 @@ function AppContent() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AppContent />
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <AppContent />
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
