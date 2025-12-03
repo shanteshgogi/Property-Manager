@@ -3,15 +3,15 @@ import express from "express";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "./firebase.js";
-import { logActivity } from "./lib/activityLogger.js";
+import { logActivity } from "./activityLogger.js";
 import {
   insertPropertySchema,
   insertUnitSchema,
   insertTenantSchema,
   insertTransactionSchema,
 } from "./shared/schema.js";
-import { upload } from "./lib/fileUpload.js";
-import { generateCSV } from "./lib/csvExport.js";
+import { upload } from "./fileUpload.js";
+import { generateCSV } from "./csvExport.js";
 
 export function registerRoutes(app: Express): void {
   // Serve uploaded files statically
